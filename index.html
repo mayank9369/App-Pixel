@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="hi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>App‑Pixel • Explore Trusted APKs</title>
+    <meta name="theme-color" content="#2563EB" />
+    <link rel="stylesheet" href="style.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="logo" onclick="location.hash='#/home'">
+        <div class="pixelP" aria-hidden="true">
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <div class="brand"><strong>App‑Pixel</strong></div>
+      </div>
+      <div class="top-actions">
+        <button id="btnSearch" class="icon-btn" title="Search">🔎</button>
+        <button id="btnTheme" class="icon-btn" title="Toggle theme">🌙</button>
+        <button id="btnMenu" class="icon-btn" title="Menu">☰</button>
+      </div>
+    </header>
+
+    <!-- Side Drawer -->
+    <aside id="drawer" class="drawer" aria-hidden="true">
+      <div class="drawer-header">
+        <div class="avatar" id="drawerAvatar" title="Avatar">A</div>
+        <div class="user-meta">
+          <div id="drawerName">Guest</div>
+          <small id="drawerEmail">guest@example.com</small>
+        </div>
+        <button id="btnDrawerClose" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <nav class="drawer-nav">
+        <a href="#/profile">👤 Profile</a>
+        <a href="#/history">⬇️ Download History</a>
+        <a href="#/admin">🛠️ Admin Panel</a>
+        <a href="#/about">ℹ️ About</a>
+      </nav>
+      <div class="drawer-footer">
+        <small>© <span id="year"></span> App‑Pixel</small>
+      </div>
+    </aside>
+
+    <!-- Overlay -->
+    <div id="overlay" class="overlay" aria-hidden="true"></div>
+
+    <!-- Search overlay -->
+    <div id="searchOverlay" class="search-overlay" aria-hidden="true">
+      <div class="search-box">
+        <input id="searchInput" type="text" placeholder="Search apps, categories..." />
+        <button id="searchClose" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <div id="searchResults" class="search-results"></div>
+    </div>
+
+    <!-- Main content -->
+    <main id="view" class="view" role="main"></main>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- Image Viewer (Lightbox) -->
+    <div id="imgViewer" class="img-viewer" aria-hidden="true">
+      <button class="iv-btn iv-close" id="ivClose" aria-label="Close">✕</button>
+      <button class="iv-btn iv-prev" id="ivPrev" aria-label="Previous">‹</button>
+      <img id="ivImg" alt="preview">
+      <button class="iv-btn iv-next" id="ivNext" aria-label="Next">›</button>
+      <a class="iv-btn iv-open" id="ivOpen" target="_blank" rel="noopener" aria-label="Open in new tab">↗</a>
+    </div>
+
+    <!-- App JS -->
+    <script type="module" src="app.firebase.js"></script>
+  </body>
+</html>
