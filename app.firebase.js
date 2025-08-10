@@ -397,7 +397,9 @@ function appCard(a){
   return `
     <div class="card">
       <div class="card-header">
-        <img class="app-icon" src="${a.icon}" alt="${a.name} icon" onerror="this.src='https://via.placeholder.com/96?text=App'">
+        <img class="app-icon" loading="lazy" decoding="async"
+             src="${a.icon}" alt="${a.name} icon"
+             onerror="this.src='https://via.placeholder.com/96?text=App'">
         <div>
           <div class="app-title">${a.name}</div>
           <div class="meta">
@@ -450,7 +452,8 @@ async function renderAppDetail(id){
 
   $("#view").innerHTML = `
     <section class="detail-head">
-      <img class="app-icon" src="${a.icon}" alt="${a.name}" style="width:96px;height:96px;border-radius:20px;">
+      <img class="app-icon" loading="lazy" decoding="async"
+        src="${a.icon}" alt="${a.name}" style="width:96px;height:96px;border-radius:20px;">
       <div style="flex:1">
         <h2 style="margin:0 0 6px">${a.name}</h2>
         
@@ -479,7 +482,7 @@ async function renderAppDetail(id){
       <section class="section">
         <h2>Screenshots</h2>
         <div class="screens">
-          ${a.screenshots.map(s=>`<img src="${s}" alt="screenshot" onerror="this.remove()">`).join('')}
+          ${a.screenshots.map(s=>`<img loading="lazy" decoding="async" src="${s}" alt="screenshot" onerror="this.remove()">`).join('')}
         </div>
       </section>
     `:''}
@@ -530,7 +533,9 @@ function setupStickyCTA(app){
   bar.className = "sticky-cta";
   bar.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px">
-      <img src="${app.icon}" class="app-icon" style="width:40px;height:40px;border-radius:10px">
+      <img loading="lazy" decoding="async"
+        src="${app.icon}" class="app-icon"
+        style="width:40px;height:40px;border-radius:10px" alt="${app.name}">
       <div>
         <div class="title">${app.name}</div>
         <div class="meta">v${app.version||'1.0.0'} • ${app.sizeMB||0} MB</div>
@@ -1004,7 +1009,9 @@ function handleSearch(){
 
   box.innerHTML = results.map(a=>`
     <div class="search-result" data-id="${a.id}">
-      <img src="${a.icon}" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border)">
+      <img loading="lazy" decoding="async"
+        src="${a.icon}" alt="${a.name}"
+        style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border)">
       <div style="flex:1">
         <div style="font-weight:600">${a.name}</div>
         <div class="meta">${a.category} • ⭐ ${(a.rating||0).toFixed(1)} • ${a.sizeMB||0} MB</div>
