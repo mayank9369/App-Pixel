@@ -81,6 +81,19 @@ function initTheme(){
   applyTheme(saved || (prefersDark ? "dark" : "light"));
 }
 
+const SKIN_KEY = "apx_skin";
+const SKINS = ["nebula","sunset","mint"];
+
+function applySkin(s){
+  document.documentElement.setAttribute("data-skin", s);
+  localStorage.setItem(SKIN_KEY, s);
+  const b = document.querySelector("#btnSkin");
+  if(b){ b.textContent = s === "sunset" ? "🌅" : s === "mint" ? "🌿" : "🎨"; }
+}
+function initSkin(){
+  applySkin(localStorage.getItem(SKIN_KEY) || "nebula");
+}
+
 function copyText(text){
   if (navigator.clipboard && window.isSecureContext) {
     return navigator.clipboard.writeText(text);
@@ -119,6 +132,35 @@ function safeOpen(u){
     }
   }, 300);
 }
+
+// Modern stars + Verified badge helpers
+const STAR_SVG = `
+  <svg viewBox="0 0 20 20" class="star" aria-hidden="true">
+    <path fill="currentColor" d="M10 1.6l2.47 5.02 5.53.8-4 3.9.95 5.5L10 14.9 5.05 16.9 6 11.3 2 7.42l5.53-.8L10 1.6z"/>
+  </svg>
+`;
+function starsRow(){ return Array.from({length:5}).map(()=>STAR_SVG).join(''); }
+function ratingStars(val=0){
+  const r = Math.max(0, Math.min(5, Number(val)||0));
+  const pct = (r/5)*100;
+  return `
+    <span class="rating" aria-label="Rating ${r.toFixed(1)} of 5">
+      <span class="stars">
+        <span class="row bg">${starsRow()}</span>
+        <span class="row fg" style="width:${pct}%">${starsRow()}</span>
+      </span>
+      <span class="score">${r.toFixed(1)}</span>
+    </span>
+  `;
+}
+const VERIFIED_BADGE = `
+  <span class="badge badge-verify" title="Verified">
+    <svg class="i" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M12 2 3 7v6c0 5 5 9 9 9s9-4 9-9V7l-9-5zm-1 13.2-3.2-3.2 1.4-1.4L11 12.6l4.8-4.8 1.4 1.4L11 15.2z"/>
+    </svg>
+    Verified
+  </span>
+`;
 
 /* Image Viewer (Lightbox) */
 const iv = { items: [], index: 0 };
@@ -175,7 +217,15 @@ function bindSearchOverlayTapClose(){
 
 /* 5) Chrome bindings */
 window.addEventListener("DOMContentLoaded", ()=>{
-  $("#year").textContent = new Date().getFullYear();
+  const yr = new Date().getFullYear();
+
+  const y1 = $("#year");
+  if (y1) y1.textContent = yr;
+
+  const y2 = $("#yearFoot");
+  if (y2) y2.textContent = yr;
+
+  initSkin();
   initTheme();
   bindImageViewerChrome();
   bindChrome();
@@ -186,6 +236,12 @@ window.addEventListener("DOMContentLoaded", ()=>{
 window.addEventListener("hashchange", router);
 
 function bindChrome(){
+  document.querySelector("#btnSkin")?.addEventListener("click", ()=>{
+  const cur = document.documentElement.getAttribute("data-skin") || "nebula";
+  const next = SKINS[(SKINS.indexOf(cur)+1)%SKINS.length];
+  applySkin(next);
+  });
+
   $("#btnMenu")?.addEventListener("click", ()=>{
     $("#drawer").classList.add("open");
     $("#overlay").classList.add("show");
@@ -199,6 +255,15 @@ function bindChrome(){
   document.querySelector("#btnTheme")?.addEventListener("click", ()=>{
     const current = document.documentElement.getAttribute("data-theme") || "light";
     applyTheme(current === "dark" ? "light" : "dark");
+  });
+
+  // NEW: Drawer nav links par click → drawer close
+  $$(".drawer-nav a").forEach(link=>{
+    link.addEventListener("click", ()=>{
+      closeDrawer();
+      // optional: search overlay bhi band karna ho to
+      closeSearch();
+    });
   });
 }
 function closeDrawer(){
@@ -246,6 +311,7 @@ function startPublicAppsListener(){
 /* 7) Router */
 function router(isSilent=false){
   clearStickyCTA();
+  closeDrawer(); // optional: auto close on route change
   const hash = location.hash || "#/home";
   const parts = hash.replace(/^#\//,"").split("/");
   const view = parts[0] || "home";
@@ -326,6 +392,7 @@ function bindHomeGridButtons(){
     btn.addEventListener("click", e => location.hash = `#/download/${e.currentTarget.dataset.id}/step/1`);
   });
 }
+
 function appCard(a){
   return `
     <div class="card">
@@ -333,11 +400,15 @@ function appCard(a){
         <img class="app-icon" src="${a.icon}" alt="${a.name} icon" onerror="this.src='https://via.placeholder.com/96?text=App'">
         <div>
           <div class="app-title">${a.name}</div>
-          <div class="meta">⭐ ${(a.rating||0).toFixed(1)} • ${a.sizeMB||0} MB • ${a.category||''}</div>
+          <div class="meta">
+            ${ratingStars(a.rating||0)}
+            <span class="dot">•</span> ${a.sizeMB||0} MB
+            <span class="dot">•</span> ${a.category||''}
+          </div>
         </div>
       </div>
       <div class="tags">
-        ${a.verified ? `<span class="chip">✅ Verified</span>` : ``}
+        ${a.verified ? VERIFIED_BADGE : ``}
         ${(a.tags||[]).slice(0,2).map(t=>`<span class="chip">${t}</span>`).join('')}
       </div>
       <div class="controls">
@@ -347,6 +418,7 @@ function appCard(a){
     </div>
   `;
 }
+
 function categoryTile(c){
   return `
     <div class="card" style="align-items:center;text-align:center;gap:8px;">
@@ -381,13 +453,15 @@ async function renderAppDetail(id){
       <img class="app-icon" src="${a.icon}" alt="${a.name}" style="width:96px;height:96px;border-radius:20px;">
       <div style="flex:1">
         <h2 style="margin:0 0 6px">${a.name}</h2>
+        
         <div class="detail-meta">
-          <span>⭐ ${(a.rating||0).toFixed(1)}</span>
+          ${ratingStars(a.rating||0)}
           <span>${a.sizeMB||0} MB</span>
           <span>v${a.version||'1.0.0'}</span>
           <span>${a.category||''}</span>
-          ${a.verified ? `<span>✅ Verified</span>` : ``}
+          ${a.verified ? VERIFIED_BADGE : ``}
         </div>
+
         <div class="controls" style="margin-top:10px;">
           <button class="btn primary" onclick="location.hash='#/download/${a.id}/step/1'">Download (Free)</button>
           <button class="btn ghost" id="shareBtn">Share</button>
@@ -493,7 +567,7 @@ function renderDownloadStep(id, step=1){
         <div class="ad-box">Ad space (placeholder)</div>
         <div class="countdown" id="countdown">Please wait 5s</div>
         <div class="controls">
-          <button id="btnContinue" class="btn primary" disabled>Aage badhein</button>
+          <button id="btnContinue" class="btn primary" disabled>Continue..</button>
           <button class="btn ghost" onclick="location.hash='#/app/${a.id}'">Back to app</button>
         </div>
       `:`
@@ -552,7 +626,11 @@ function renderProfile(){
   const u = userProfile;
   $("#view").innerHTML = `
     <section class="section">
-      <h2>Profile</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <h2 style="margin:0">Profile</h2>
+        <button class="btn ghost" onclick="location.hash='#/home'">Back to Home</button>
+      </div>
+
       <div class="form" style="max-width:460px">
         <div class="input"><label>Name</label><input id="pName" value="${u.name||''}" placeholder="Your name"></div>
         <div class="input"><label>Email</label><input id="pEmail" value="${u.email||''}" placeholder="you@example.com"></div>
@@ -574,13 +652,22 @@ function renderHistory(){
   const items = historyList;
   $("#view").innerHTML = `
     <section class="section">
-      <h2>Download History</h2>
-      ${items.length===0?`
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <h2 style="margin:0">Download History</h2>
+        <div class="controls">
+          <button class="btn ghost" onclick="location.hash='#/home'">Back to Home</button>
+          ${items.length ? '<button class="btn ghost" id="btnClearHistory">Clear history</button>' : ''}
+        </div>
+      </div>
+
+      ${items.length===0 ? `
         <div class="card" style="text-align:center;">
           <div class="muted">Abhi koi download nahi hai. Explore karein!</div>
-          <button class="btn ghost" onclick="location.hash='#/home'">Explore apps</button>
+          <div class="controls" style="justify-content:center;margin-top:8px;">
+            <button class="btn ghost" onclick="location.hash='#/home'">Explore apps</button>
+          </div>
         </div>
-      `:`
+      ` : `
         <div class="list">
           ${items.map(it=>`
             <div class="list-item">
@@ -597,6 +684,16 @@ function renderHistory(){
       `}
     </section>
   `;
+
+  if(items.length){
+    $("#btnClearHistory")?.addEventListener("click", ()=>{
+      if(!confirm("Clear all download history?")) return;
+      historyList = [];
+      saveHistory();
+      renderHistory();
+      toast("History cleared");
+    });
+  }
 }
 
 /* 13) Admin */
@@ -605,15 +702,17 @@ async function renderAdmin(){
   if(!user || user.uid !== ADMIN_UID){
     $("#view").innerHTML = `
       <section class="section">
-        <h2>Admin Login</h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <h2 style="margin:0">Admin Login</h2>
+          <button class="btn ghost" onclick="location.hash='#/home'">Back to Home</button>
+        </div>
         <div class="form" style="max-width:420px">
           <div class="input"><label>Email</label><input id="adEmail" placeholder="admin@example.com"></div>
           <div class="input"><label>Password</label><input id="adPass" type="password" placeholder="••••••••"></div>
           <div class="controls">
             <button id="adLogin" class="btn primary">Login</button>
-            <button class="btn ghost" onclick="location.hash='#/home'">Back</button>
           </div>
-          <div class="muted">Note: Sirf authorized admin UID ko write access hai.</div>
+          <div class="muted">Note: Only authorized administrators have full access.</div>
         </div>
       </section>
     `;
@@ -650,6 +749,7 @@ function renderAdminUI(){
             <input id="importFile" type="file" accept="application/json" style="display:none">
           </label>
           <span style="flex:1"></span>
+          <button class="btn ghost" onclick="location.hash='#/home'">Back to Home</button>
           <button class="btn ghost" id="btnLogout">Logout</button>
         </div>
 
@@ -825,9 +925,54 @@ function renderAdminUI(){
 function renderAbout(){
   $("#view").innerHTML = `
     <section class="section">
-      <h2>About App‑Pixel</h2>
-      <p>Lightweight APK explorer with a simple 3‑step ad flow and Firebase realtime updates.</p>
-      <p class="muted">Admin writes are locked by security rules.</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <h2 style="margin:0">About App‑Pixel</h2>
+        <button class="btn ghost" onclick="location.hash='#/home'">Back to Home</button>
+      </div>
+      <p>
+        App‑Pixel ek next‑gen APK explorer hai — jahan discovery, trust aur speed ek saath milte hain.
+        No clutter, no confusion. Bas clean design, verified links aur lightning‑fast experience.
+      </p>
+
+      <h3 style="margin:14px 0 8px;">Kyun App‑Pixel?</h3>
+      <div class="tags" style="flex-wrap:wrap">
+        <span class="chip">🛡️ Verified sources</span>
+        <span class="chip">⚡ Realtime updates</span>
+        <span class="chip">🔍 Clear details (version, size, permissions)</span>
+        <span class="chip">🌗 Elegant light/dark UI</span>
+      </div>
+
+      <h3 style="margin:16px 0 8px;">Experience that just flows</h3>
+      <div class="tags" style="flex-wrap:wrap">
+        <span class="chip">🔎 Smart search overlay</span>
+        <span class="chip">📸 Zoomable screenshots</span>
+        <span class="chip">📱 Sticky download bar</span>
+        <span class="chip">🔗 One‑tap share</span>
+        <span class="chip">🧭 3‑step safe download</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Privacy & Trust</h2>
+      <p class="muted">
+        No forced sign‑in for browsing. Download history sirf aapke device par save hoti hai (local).
+        Hum minimal data rakhte hain — aapka control, aapki choice.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>What’s next</h2>
+      <div class="tags" style="flex-wrap:wrap">
+        <span class="chip">🧩 Multi‑source mirrors</span>
+        <span class="chip">🛡️ Hash verification (SHA‑256)</span>
+        <span class="chip">🔔 Smart update alerts</span>
+        <span class="chip">📦 PWA (Installable app)</span>
+        <span class="chip">✨ Better recommendations</span>
+      </div>
+      <p class="muted" style="margin-top:8px;">
+        Note: Third‑party APKs install karne se pehle permissions check karein, sirf trusted sources use karein,
+        aur zarurat ho to antivirus scan karein.
+      </p>
     </section>
   `;
 }
